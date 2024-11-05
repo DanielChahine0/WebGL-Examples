@@ -1,5 +1,3 @@
-
-
 var canvas;
 var gl;
 
@@ -16,8 +14,6 @@ var vertexColors = [
     vec4( 0.0, 0.0, 1.0, 1.0 ),  // blue
    ];
 window.onload = init;
-
-
 
 function init() {
     canvas = document.getElementById( "gl-canvas" );
@@ -53,8 +49,8 @@ function init() {
 }
 
 var render = function() {
-    gl.clear( gl.COLOR_BUFFER_BIT);
+    gl.clear(gl.COLOR_BUFFER_BIT);
 	
-    gl.drawArrays( gl.TRIANGLES, 0, 3 );
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
     requestAnimFrame(render);
 }
