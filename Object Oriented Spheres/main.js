@@ -232,8 +232,8 @@ Spheres.create = function(numSpheres) {
 		Spheres.sphereList.push(b) ;
 	}
 	Spheres.numSpheres = numSpheres;
-	
 }
+
 Spheres.create(5);
 Spheres.draw = function() {
 	for( let i = 0 ; i < this.numSpheres; i++) {
@@ -244,6 +244,8 @@ Spheres.draw = function() {
 		gPop() ;
 	}
 }
+
+
 Spheres.update = function( t) {
 	for( let i = 0 ; i < this.numSpheres; i++) {
 		this.sphereList[i].pos[1] = 2*Math.sin(2*t + i);
@@ -298,19 +300,9 @@ function render() {
 	Spheres.draw() ;
 	
 	//console.log(TIME)
-	
-	/**
-	gPush() ;
-	{
-		gRotate(TIME*180/3.14159,0,1,0) ;
-		setColor(vec4(1.0,0.0,0.0,1.0)) ;
-		drawSphere() ;
-	}
-	gPop() ;
-	**/
-	
-	/**
-    gTranslate(-4,0,0) ;
+
+
+	gTranslate(-4,0,0) ;
     gPush() ;
     {
 		gRotate(TIME*180/3.14159,0,1,0) ;
@@ -318,7 +310,7 @@ function render() {
         drawSphere() ;
     }
     gPop() ;
-    
+
     gPush() ;
     {
         gTranslate(3,0,0) ;
@@ -327,7 +319,7 @@ function render() {
         drawCube() ;
     }
     gPop() ;
-    
+
     gPush() ;
     {
         gTranslate(5,0,0) ;
@@ -336,7 +328,7 @@ function render() {
         drawCylinder() ;
     }
     gPop() ;
-    
+
     gPush() ;
     {
         gTranslate(7,0,0) ;
@@ -345,7 +337,6 @@ function render() {
         drawCone() ;
     }
     gPop() ;
-	 **/
     
     if( animFlag )
         window.requestAnimFrame(render);
