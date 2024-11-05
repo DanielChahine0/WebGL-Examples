@@ -131,7 +131,8 @@ window.onload = function init() {
             window.requestAnimFrame(render);
         }
         console.log(animFlag) ;
-		
+
+		// Allow the camera to move using the mouse
 		controller = new CameraController(canvas);
 		controller.onchange = function(xRot,yRot) {
 			RX = xRot ;
