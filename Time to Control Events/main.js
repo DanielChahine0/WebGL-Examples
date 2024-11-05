@@ -1,5 +1,6 @@
-
-
+// This is an example of how to make a cube visible or invisible
+// based on time
+// Toggle Animation on.
 var canvas;
 var gl;
 
@@ -27,10 +28,9 @@ var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
 var materialSpecular = vec4( 0.4, 0.4, 0.4, 1.0 );
 var materialShininess = 30.0;
 
-var ctm;
 var ambientColor, diffuseColor, specularColor;
 
-var modelViewMatrix, projectionMatrix, normalMatrix;
+var modelMatrix, viewMatrix, modelViewMatrix, projectionMatrix, normalMatrix;
 var modelViewMatrixLoc, projectionMatrixLoc, normalMatrixLoc;
 var eye;
 var at = vec3(0.0, 0.0, 0.0);
@@ -40,12 +40,14 @@ var RX = 0 ;
 var RY = 0 ;
 var RZ = 0 ;
 
-var MVS = [] ; // The modelview matrix stack
+var MS = [] ; // The modeling matrix stack
 var TIME = 0.0 ; // Realtime
+var prevTime = 0.0 ; // previous time
+var resetTimerFlag = true ;
+var animFlag = false ;
 
-function setColor(r,g,b)
+function setColor(c)
 {
-    var c = vec4(r,g,b,1.0) ;
     ambientProduct = mult(lightAmbient, c);
     diffuseProduct = mult(lightDiffuse, c);
     specularProduct = mult(lightSpecular, materialSpecular);
@@ -107,16 +109,28 @@ window.onload = function init() {
 
     
     document.getElementById("sliderXi").onchange = function() {
-        RX = this.value;
-		window.requestAnimFrame(render);
-	};
+        RX = this.value ;
+        window.requestAnimFrame(render);
+    };
     document.getElementById("sliderYi").onchange = function() {
         RY = this.value;
-		window.requestAnimFrame(render);
+        window.requestAnimFrame(render);
     };
     document.getElementById("sliderZi").onchange = function() {
         RZ =  this.value;
-		window.requestAnimFrame(render);
+        window.requestAnimFrame(render);
+    };
+
+    document.getElementById("animToggleButton").onclick = function() {
+        if( animFlag ) {
+            animFlag = false;
+        }
+        else {
+            animFlag = true  ;
+            resetTimerFlag = true ;
+            window.requestAnimFrame(render);
+        }
+        console.log(animFlag) ;
     };
 
     
@@ -125,6 +139,7 @@ window.onload = function init() {
 
 // Sets the modelview and normal matrix in the shaders
 function setMV() {
+    modelViewMatrix = mult(viewMatrix,modelMatrix) ;
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
     normalMatrix = inverseTranspose(modelViewMatrix) ;
     gl.uniformMatrix4fv(normalMatrixLoc, false, flatten(normalMatrix) );
@@ -134,6 +149,7 @@ function setMV() {
 function setAllMatrices() {
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
     setMV() ;
+    
 }
 
 // Draws a 2x2x2 cube center at the origin
@@ -166,85 +182,91 @@ function drawCone() {
 }
 
 // Post multiples the modelview matrix with a translation matrix
-// and replaces the modelview matrix with the result
+// and replaces the modeling matrix with the result
 function gTranslate(x,y,z) {
-    modelViewMatrix = mult(modelViewMatrix,translate([x,y,z])) ;
+    modelMatrix = mult(modelMatrix,translate([x,y,z])) ;
 }
 
 // Post multiples the modelview matrix with a rotation matrix
-// and replaces the modelview matrix with the result
+// and replaces the modeling matrix with the result
 function gRotate(theta,x,y,z) {
-    modelViewMatrix = mult(modelViewMatrix,rotate(theta,[x,y,z])) ;
+    modelMatrix = mult(modelMatrix,rotate(theta,[x,y,z])) ;
 }
 
 // Post multiples the modelview matrix with a scaling matrix
-// and replaces the modelview matrix with the result
+// and replaces the modeling matrix with the result
 function gScale(sx,sy,sz) {
-    modelViewMatrix = mult(modelViewMatrix,scale(sx,sy,sz)) ;
+    modelMatrix = mult(modelMatrix,scale(sx,sy,sz)) ;
 }
 
-// Pops MVS and stores the result as the current modelViewMatrix
+// Pops MS and stores the result as the current modelMatrix
 function gPop() {
-    modelViewMatrix = MVS.pop() ;
+    modelMatrix = MS.pop() ;
 }
 
-// pushes the current modelViewMatrix in the stack MVS
+// pushes the current modelViewMatrix in the stack MS
 function gPush() {
-    MVS.push(modelViewMatrix) ;
+    MS.push(modelMatrix) ;
 }
 
+
+var timeLastDraw = 0 ;
+var isVisible = false ;
 function render() {
     
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     
     eye = vec3(0,0,10);
-    MVS = [] ; // Initialize modelviewmatrix stack
+    MS = [] ; // Initialize modeling matrix stack
+	
+	// initialize the modeling matrix to identity
+    modelMatrix = mat4() ;
     
-    modelViewMatrix = mat4() ;
+    // set the camera matrix
+    viewMatrix = lookAt(eye, at , up);
+   
+    // set the projection matrix
+    projectionMatrix = ortho(left, right, bottom, ytop, near, far);
     
-    eye[1] = eye[1] + 0 ;
-    modelViewMatrix = mult(modelViewMatrix,lookAt(eye, at , up));
-    
-    
-    
+    // Rotations from the sliders
     gRotate(RZ,0,0,1) ;
     gRotate(RY,0,1,0) ;
     gRotate(RX,1,0,0) ;
     
-    projectionMatrix = ortho(left, right, bottom, ytop, near, far);
     
-    
+    // set all the matrices
     setAllMatrices() ;
     
-    var timer = new Date() ;
-    TIME = timer.getTime() /1000.0 ;
-    
-    
-    // upper arm
-    gRotate(TIME*20,0,0,1) ;
-    gPush() ;
+    var curTime ;
+    if( animFlag )
     {
-        setColor(vec4(0.0,1.0,0.0,1.0)) ;
-        gScale(2,0.5,0.5) ;
-        gTranslate(1,0,0) ;
-        drawCube() ;
+        curTime = (new Date()).getTime() /1000 ;
+        if( resetTimerFlag ) {
+            prevTime = curTime ;
+            resetTimerFlag = false ;
+        }
+        TIME = TIME + curTime - prevTime ;
+        prevTime = curTime ;
     }
-    gPop() ;
+	
+	
+	if( (TIME - timeLastDraw) > 3 && !isVisible) {
+		isVisible = true ;
+		timeLastDraw = TIME ;
+	}
+	
+	if( (TIME - timeLastDraw > 2) && isVisible) {
+		isVisible = false ;
+	}
+	if( isVisible){
+		setColor(vec4(0.0,1.0,0.0,1.0)) ;
+		gRotate(TIME*180/3.14159,0,1,0) ;
+		drawCube() ;
+	}
+	
+	
+	
     
-    // lower arm
-    gPush() ;
-    {
-        setColor(vec4(1.0,0.0,0.0,1.0)) ;
-        gTranslate(4,0,0) ;
-        gRotate(TIME*80,0,0,1) ;
-        
-        gScale(2,0.5,0.5) ;
-        gTranslate(1,0,0) ;
-        drawCube() ;
-    }
-    gPop() ;
-
-    
-    
-    window.requestAnimFrame(render);
+    if( animFlag )
+        window.requestAnimFrame(render);
 }
